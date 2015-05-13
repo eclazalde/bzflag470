@@ -1,6 +1,7 @@
 #!/usr/bin/python -tt
 
 from bzrc import BZRC, Command
+from FieldClass import Field
 import sys, math, time
 
 # An incredibly simple agent.  All we do is find the closest enemy tank, drive
@@ -27,6 +28,7 @@ class Agent(object):
 
     def __init__(self, bzrc):
         self.bzrc = bzrc
+        self.field = Field
         self.constants = self.bzrc.get_constants()
         self.commands = []
 
@@ -51,23 +53,6 @@ class Agent(object):
         # Send the commands to the server
         results = self.bzrc.do_commands(self.commands)
 
-    def attack_enemies(self, bot):
-        '''Find the closest enemy and chase it, shooting as you go'''
-        best_enemy = None
-        best_dist = 2 * float(self.constants['worldsize'])
-        for enemy in self.enemies:
-            if enemy.status != 'alive':
-                continue
-            dist = math.sqrt((enemy.x - bot.x)**2 + (enemy.y - bot.y)**2)
-            if dist < best_dist:
-                best_dist = dist
-                best_enemy = enemy
-        if best_enemy is None:
-            command = Command(bot.index, 0, 0, False)
-            self.commands.append(command)
-        else:
-            self.move_to_position(bot, best_enemy.x, best_enemy.y)
-
     def move_to_position(self, bot, target_x, target_y):
         target_angle = math.atan2(target_y - bot.y,
                 target_x - bot.x)
@@ -84,6 +69,9 @@ class Agent(object):
             angle -= 2 * math.pi
         return angle
 
+	def calculatePD(self, tank):
+		pf = self.field.queryPosition(tank.x, tank.y)
+		
 
 def main():
     # Process CLI arguments.
