@@ -1,8 +1,10 @@
 #!/usr/bin/python -tt
 
+from collections import defaultdict
+from threading import Timer
 from bzrc import BZRC, Command
 from FieldClass import Field
-import sys, math, time
+import sys, math, time, numpy
 
 # An incredibly simple agent.  All we do is find the closest enemy tank, drive
 # towards it, and shoot.  Note that if friendly fire is allowed, you will very
@@ -28,11 +30,14 @@ class Agent(object):
 
     def __init__(self, bzrc):
         self.bzrc = bzrc
-        self.field = Field
+        self.field = Field(-400, 400, -400, 400)
         self.constants = self.bzrc.get_constants()
         self.commands = []
+        self.prevError = defaultdict(list)
+        self.vizualize = True
+        self.gotFlag = False
 
-    def tick(self, time_diff):
+    def tickAll(self, step):
         '''Some time has passed; decide what to do next'''
         # Get information from the BZRC server
         mytanks, othertanks, flags, shots = self.bzrc.get_lots_o_stuff()
@@ -46,33 +51,103 @@ class Agent(object):
         # Reset my set of commands (we don't want to run old commands)
         self.commands = []
 
+        if self.vizualize:
+            self.field.visualize()
+            self.vizualize = False
+        
+        # Check to see if the flag has been captured
+        for bot in mytanks:
+            if not self.gotFlag and bot.flag is not '-':
+                self.gotFlag = True
+                self.flipFieldToHome()
+                
+            if self.gotFlag and bot.flag is '-':
+                self.gotFlag = False
+                self.flipFieldToEnemy()
+        
         # Decide what to do with each of my tanks
-        #for bot in mytanks:
-        #    self.attack_enemies(bot)
+        for bot in mytanks:
+            values = self.calculatePD(bot, step)
+            command = Command(bot.index, values[0], values[1], False)
+            self.commands.append(command)
+
+        # Send the commands to the server
+        results = self.bzrc.do_commands(self.commands)
+        
+    def tickOne(self, step):
+        '''Some time has passed; decide what to do next'''
+        # Get information from the BZRC server
+        mytanks, othertanks, flags, shots = self.bzrc.get_lots_o_stuff()
+        self.mytanks = mytanks
+        self.othertanks = othertanks
+        self.flags = flags
+        self.shots = shots
+        self.enemies = [tank for tank in othertanks if tank.color !=
+                self.constants['team']]
+
+        # Reset my set of commands (we don't want to run old commands)
+        self.commands = []
+
+        # Visualize potential field
+        if self.vizualize:
+            self.field.visualize()
+            self.vizualize = False
+            print 'Done with visualization'
+        
+        # Which tank do you want to control
+        bot = mytanks[0]
+        
+        # Check to see if the flag has been captured
+        if not self.gotFlag and bot.flag is not '-':
+            self.gotFlag = True
+            self.flipFieldToHome()
+            
+        if self.gotFlag and bot.flag is '-':
+            self.gotFlag = False
+            self.flipFieldToEnemy()
+        
+        # Decide what to do with one tank of my tanks
+        values = self.calculatePD(bot, step)
+        command = Command(bot.index, values[0], values[1], True)
+        self.commands.append(command)
 
         # Send the commands to the server
         results = self.bzrc.do_commands(self.commands)
 
-    def move_to_position(self, bot, target_x, target_y):
-        target_angle = math.atan2(target_y - bot.y,
-                target_x - bot.x)
-        relative_angle = self.normalize_angle(target_angle - bot.angle)
-        command = Command(bot.index, 1, 2 * relative_angle, True)
-        self.commands.append(command)
-
-    def normalize_angle(self, angle):
-        '''Make any angle be between +/- pi.'''
-        angle -= 2 * math.pi * int (angle / (2 * math.pi))
-        if angle <= -math.pi:
-            angle += 2 * math.pi
-        elif angle > math.pi:
-            angle -= 2 * math.pi
-        return angle
-
-	def calculatePD(self, tank):
-		pf = self.field.queryPosition(tank.x, tank.y)
-		
-
+    def calculatePD(self, bot, step):
+        # Get the potential field magnitudes in the x and y at the current position
+    	pf = self.field.queryPosition(bot.x, bot.y)
+        
+        # Tune these or set to zero to manipulate the PD controller
+        kProportion = 1.0
+        kDerivative = 1.0
+        
+        # Calculate values used in the PD controller formula
+        angleReference = numpy.arctan2(pf[1], pf[0])
+        errorAtStep = angleReference - bot.angle
+        errorPrevStep = 0.0 # Previous error is zero if this is the first calculation.
+         
+        # Update the previous error to the last saved error if there is one
+        if bot.index in self.prevError:
+            errorPrevStep = self.prevError[bot.index]
+    	
+        # This is the PD formula
+        angularAtStep = (kProportion * errorAtStep) + (kDerivative * ((errorAtStep - errorPrevStep) / step))
+        
+        # Calculates the speed based off the magnitude of the potential field vector
+        speedAtStep = math.sqrt(pf[0]**2 + pf[1]**2)
+        
+        # Save the new error to use in the next iteration
+        self.prevError[bot.index] = errorAtStep
+                              
+        return [speedAtStep, angularAtStep]
+    
+    def flipFieldToHome(self):
+        print 'WIP'
+        
+    def flipFieldToEnemy(self):
+        print 'WIP'
+    
 def main():
     # Process CLI arguments.
     try:
@@ -80,7 +155,7 @@ def main():
     except ValueError:
         execname = sys.argv[0]
         print >>sys.stderr, '%s: incorrect number of arguments' % execname
-        print >>sys.stderr, 'usage: %s hostname port' % sys.argv[0]
+        print >>sys.stderr, 'usage: %s hostname port "one"(or "all")' % sys.argv[0]
         sys.exit(-1)
 
     # Connect.
@@ -88,37 +163,29 @@ def main():
     bzrc = BZRC(host, int(port))
 
     agent = Agent(bzrc)
-
     prev_time = time.time()
-
+    step = .001
+    
+    # Do you want to control 1 tank or all of the tanks on a team?
+    ctrl = 'one'
+    #ctrl = 'all'
+    
     # Run the agent
     try:
-        moving = False
-        turning = False
         while True:
             time_diff = time.time() - prev_time
-            if time_diff >= 1.5:
-                agent.commands = []
-                command = Command(0, 0, 0.8, 1)
-                agent.commands.append(command)
-                agent.bzrc.do_commands(agent.commands)
-            if moving:
-                if time_diff >= 3:
+            # Only do something if the set interval has passed
+            if time_diff >= step:
+                if ctrl is 'one': # This call the tickOne method for controlling 1 tank
+                    agent.tickOne(step)
                     prev_time = time.time()
-                    agent.commands = []
-                    command = Command(0, 0, 0.8, 1)
-                    agent.commands.append(command)
-                    agent.bzrc.do_commands(agent.commands)
-                    moving = False
-            else:
-                if time_diff >= 2:  
-                    prev_time = time.time()                 
-                    agent.commands = []
-                    command = Command(0, .5, 0, 1)
-                    agent.commands.append(command)
-                    agent.bzrc.do_commands(agent.commands)
-                    turning = False
-                    moving = True
+                elif ctrl is 'all': # This call the tickAll method for controlling all the tanks
+                    agent.tickAll(step)
+                    prev_time = time.time()
+                else:
+                    print >>sys.stderr, 'This shouldn\'t happen!!'
+                    sys.exit(-1)
+                
     except KeyboardInterrupt:
         print "Exiting due to keyboard interrupt."
         bzrc.close()
