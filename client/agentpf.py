@@ -31,6 +31,8 @@ class Agent(object):
     def __init__(self, bzrc):
         self.bzrc = bzrc
         self.field = Field(-400, 400, -400, 400)
+        self.field.setupMap4Ls()
+        self.field.calculateFields()
         self.constants = self.bzrc.get_constants()
         self.commands = []
         self.prevError = defaultdict(list)
@@ -90,7 +92,7 @@ class Agent(object):
 
         # Visualize potential field
         if self.vizualize:
-            self.field.visualize()
+            self.field.visualize(True, True, True)
             self.vizualize = False
             print 'Done with visualization'
         
