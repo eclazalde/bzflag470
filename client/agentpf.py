@@ -137,7 +137,7 @@ class Agent(object):
         angularAtStep = (kProportion * errorAtStep) + (kDerivative * ((errorAtStep - errorPrevStep) / step))
         
         # Calculates the speed based off the magnitude of the potential field vector
-        speedAtStep = math.sqrt(pf[0]**2 + pf[1]**2)
+        speedAtStep = .5 #math.sqrt(pf[0]**2 + pf[1]**2)
         
         # Save the new error to use in the next iteration
         self.prevError[bot.index] = errorAtStep
@@ -145,7 +145,7 @@ class Agent(object):
         return [speedAtStep, angularAtStep]
     
     def flipFieldToHome(self):
-        print 'WIP'
+        field.switchToHome(True)
         
     def flipFieldToEnemy(self):
         print 'WIP'
@@ -157,7 +157,7 @@ def main():
     except ValueError:
         execname = sys.argv[0]
         print >>sys.stderr, '%s: incorrect number of arguments' % execname
-        print >>sys.stderr, 'usage: %s hostname port "one"(or "all")' % sys.argv[0]
+        print >>sys.stderr, 'usage: %s hostname port' % sys.argv[0]
         sys.exit(-1)
 
     # Connect.
