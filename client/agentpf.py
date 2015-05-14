@@ -5,6 +5,7 @@ from threading import Timer
 from bzrc import BZRC, Command
 from FieldClass import Field
 import sys, math, time, numpy
+import numpy.linalg as la
 
 # An incredibly simple agent.  All we do is find the closest enemy tank, drive
 # towards it, and shoot.  Note that if friendly fire is allowed, you will very
@@ -32,12 +33,16 @@ class Agent(object):
         self.bzrc = bzrc
         self.field = Field(-400, 400, -400, 400)
         self.field.setupMap4Ls()
-        self.field.calculateFields()
+        #self.field.setupMapRotatedBoxes()
+        self.field.fastCalculate()
         self.constants = self.bzrc.get_constants()
         self.commands = []
         self.prevError = defaultdict(list)
         self.vizualize = True
         self.gotFlag = False
+        self.prevLocation = [0, 0]
+        self.stuckTimer = time.time()
+        self.stuck = False
 
     def tickAll(self, step):
         '''Some time has passed; decide what to do next'''
@@ -92,15 +97,17 @@ class Agent(object):
 
         # Visualize potential field
         if self.vizualize:
-            self.field.visualize(True, True, True)
+            self.field.drawFast(True, True, True)
             self.vizualize = False
             print 'Done with visualization'
         
         # Which tank do you want to control
         bot = mytanks[0]
+        print bot.flag
         
         # Check to see if the flag has been captured
         if not self.gotFlag and bot.flag is not '-':
+            print 'set home'
             self.gotFlag = True
             self.flipFieldToHome()
             
@@ -110,45 +117,67 @@ class Agent(object):
         
         # Decide what to do with one tank of my tanks
         values = self.calculatePD(bot, step)
-        command = Command(bot.index, values[0], values[1], True)
-        self.commands.append(command)
-
+        
+        if (time.time() - self.stuckTimer) > 3:
+            if bot.x == self.prevLocation[0] and bot.y == self.prevLocation[1]:
+                print 'stuck'
+                self.stuck = True
+            else:
+                self.stuck = False
+            self.prevLocation = [bot.x, bot.y]
+            self.stuckTimer = time.time()
+            
+        if self.stuck:
+            command = Command(bot.index, 1, 1, True)
+            self.commands.append(command)
+        else:
+            command = Command(bot.index, values[0], values[1], True)
+            self.commands.append(command)
+            
         # Send the commands to the server
         results = self.bzrc.do_commands(self.commands)
 
     def calculatePD(self, bot, step):
         # Get the potential field magnitudes in the x and y at the current position
-    	pf = self.field.queryPosition(bot.x, bot.y)
+    	pf = self.field.getFast(bot.x, bot.y)
         
         # Tune these or set to zero to manipulate the PD controller
-        kProportion = 1.0
-        kDerivative = 1.0
+        kProportion = .5
+        kDerivative = .002
         
         # Calculate values used in the PD controller formula
         angleReference = numpy.arctan2(pf[1], pf[0])
-        errorAtStep = angleReference - bot.angle
+        angle = angleReference - bot.angle
+        errorAtStep =  numpy.arctan2(math.sin(angle),math.cos(angle))                 
         errorPrevStep = 0.0 # Previous error is zero if this is the first calculation.
-         
+        
         # Update the previous error to the last saved error if there is one
         if bot.index in self.prevError:
             errorPrevStep = self.prevError[bot.index]
     	
         # This is the PD formula
         angularAtStep = (kProportion * errorAtStep) + (kDerivative * ((errorAtStep - errorPrevStep) / step))
-        
+        #print angularAtStep
+        if angularAtStep > 1:
+            angularAtStep = 1
+        if angularAtStep < -1:
+            angularAtStep = -1
+            
+        #print errorAtStep, angularAtStep, pf  
         # Calculates the speed based off the magnitude of the potential field vector
-        speedAtStep = .5 #math.sqrt(pf[0]**2 + pf[1]**2)
-        
+        speedAtStep = 1 - .7 * math.fabs(angularAtStep) #math.sqrt(pf[0]**2 + pf[1]**2)
+        #print speedAtStep
         # Save the new error to use in the next iteration
         self.prevError[bot.index] = errorAtStep
                               
         return [speedAtStep, angularAtStep]
     
     def flipFieldToHome(self):
-        field.switchToHome(True)
+        self.field.goToHome(True)
+        #self.field.drawFast(True, True, True)
         
     def flipFieldToEnemy(self):
-        print 'WIP'
+        self.field.goToHome(False)
     
 def main():
     # Process CLI arguments.

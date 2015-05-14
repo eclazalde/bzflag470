@@ -150,26 +150,28 @@ class Field:
         self.clearFields()
         self.clearGoals()
         self.clearObstacles()
-        self.addObstacle(100.0, 42.4264068712); self.addObstacle(142.426406871, 0.0); self.addObstacle(100.0, -42.4264068712); self.addObstacle(57.5735931288, 0)
-        self.addObstacle(-100.0, 42.4264068712); self.addObstacle(-57.5735931288, 0.0); self.addObstacle(-100.0, -42.4264068712); self.addObstacle(-142.426406871, 0)
-        self.addObstacle(0, 142.426406871); self.addObstacle(42.4264068712, 100.0); self.addObstacle(0, 57.5735931288); self.addObstacle(-42.4264068712, 100.0)
-        self.addObstacle(0, -57.5735931288); self.addObstacle(42.4264068712, -100.0); self.addObstacle(0, -142.426406871); self.addObstacle(-42.4264068712, -100.0);
+        self.addObstacle(100, 0); self.addObstacle(-100, 0); self.addObstacle(0, 100); self.addObstacle(0, -100);
+        #self.addObstacle(100.0, 42.4264068712); self.addObstacle(142.426406871, 0.0); self.addObstacle(100.0, -42.4264068712); self.addObstacle(57.5735931288, 0)
+        #self.addObstacle(-100.0, 42.4264068712); self.addObstacle(-57.5735931288, 0.0); self.addObstacle(-100.0, -42.4264068712); self.addObstacle(-142.426406871, 0)
+        #self.addObstacle(0, 142.426406871); self.addObstacle(42.4264068712, 100.0); self.addObstacle(0, 57.5735931288); self.addObstacle(-42.4264068712, 100.0)
+        #self.addObstacle(0, -57.5735931288); self.addObstacle(42.4264068712, -100.0); self.addObstacle(0, -142.426406871); self.addObstacle(-42.4264068712, -100.0);
         self.addGoal(-370,0)
         self.setHomeBase(370, 0)
         self.setupConstants()
 
     def setupConstants(self):
-        self.setRepulsionWeight(1)
-        self.setRepulsionSpread(40)
-        self.setTangentialSpread(5)
-        self.setTangentialWeight(1)
-        self.setAttractionWeight(20)
+        self.setRepulsionWeight(15)
+        self.setRepulsionSpread(60)
+        self.setTangentialWeight(3)
+        self.setTangentialSpread(45)
+        self.setAttractionWeight(8)
+        self.setAttractionSpread(2)
 
     def distance(self, p1, p2):
         return np.sqrt( (p1[0] - p2[0])**2 + (p1[1] - p2[1])**2 )
     
     def fastCalculate(self):
-        self.resolution = 10
+        self.resolution = 6
         self.padding = self.resolution / 2
         self.fast_x_dim = ( self.x_max - self.x_min ) / self.resolution
         self.fast_y_dim = ( self.y_max - self.y_min ) / self.resolution
