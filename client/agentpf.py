@@ -57,10 +57,6 @@ class Agent(object):
 
         # Reset my set of commands (we don't want to run old commands)
         self.commands = []
-
-        if self.vizualize:
-            self.field.visualize()
-            self.vizualize = False
         
         # Check to see if the flag has been captured
         for bot in mytanks:
@@ -72,12 +68,25 @@ class Agent(object):
                 self.gotFlag = False
                 self.flipFieldToEnemy()
         
-        # Decide what to do with each of my tanks
-        for bot in mytanks:
-            values = self.calculatePD(bot, step)
-            command = Command(bot.index, values[0], values[1], False)
+        # Decide what to do with each of my tanks            
+        if (time.time() - self.stuckTimer) > 3:
+            if bot.x == self.prevLocation[0] and bot.y == self.prevLocation[1]:
+                print 'stuck'
+                self.stuck = True
+            else:
+                self.stuck = False
+            self.prevLocation = [bot.x, bot.y]
+            self.stuckTimer = time.time()
+            
+        if self.stuck:
+            command = Command(bot.index, 1, 1, True)
             self.commands.append(command)
-
+        else:
+			for bot in mytanks:
+				values = self.calculatePD(bot, step)
+				command = Command(bot.index, values[0], values[1], True)
+				self.commands.append(command)
+            
         # Send the commands to the server
         results = self.bzrc.do_commands(self.commands)
         
@@ -103,7 +112,7 @@ class Agent(object):
         
         # Which tank do you want to control
         bot = mytanks[0]
-        print bot.flag
+        #print bot.flag
         
         # Check to see if the flag has been captured
         if not self.gotFlag and bot.flag is not '-':
@@ -198,8 +207,8 @@ def main():
     step = .001
     
     # Do you want to control 1 tank or all of the tanks on a team?
-    ctrl = 'one'
-    #ctrl = 'all'
+    #ctrl = 'one'
+    ctrl = 'all'
     
     # Run the agent
     try:
