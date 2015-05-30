@@ -4,6 +4,7 @@ from collections import defaultdict
 from bzrc import BZRC, Command
 import sys, math, time, random
 from reportlab.pdfbase.pdfdoc import Destination
+from GridClass import GridFilter
 
 # An incredibly simple agent.  All we do is find the closest enemy tank, drive
 # towards it, and shoot.  Note that if friendly fire is allowed, you will very
@@ -27,6 +28,8 @@ from reportlab.pdfbase.pdfdoc import Destination
 
 class Agent(object):
 
+    _gridVisualizer = None
+
     def __init__(self, bzrc):
         self.bzrc = bzrc
         self.constants = self.bzrc.get_constants()
@@ -35,7 +38,7 @@ class Agent(object):
         self.timer = defaultdict(list)
         self.loadTanks()
 
-    def tick(self, time_diff):
+    def tick(self, time_diff, gridViz):
         '''Some time has passed; decide what to do next'''
         # Get information from the BZRC server
         mytanks, othertanks, flags, shots = self.bzrc.get_lots_o_stuff()
@@ -51,10 +54,14 @@ class Agent(object):
 
         # Decide what to do with each of my tanks
         for bot in mytanks:
+            position, occgrid = self.bzrc.get_occgrid(bot.index)
+            #print occgrid
+            gridViz.recordObservationGrid(position[0], position[1], occgrid)
             self.go_to_goal(bot)
 
         # Send the commands to the server
         results = self.bzrc.do_commands(self.commands)
+        return gridViz
 
     def loadTanks(self):
 		# Get information from the BZRC server
@@ -121,16 +128,23 @@ def main():
     # Connect.
     #bzrc = BZRC(host, int(port), debug=True)
     bzrc = BZRC(host, int(port))
-
+    
+    gridVisualizer = GridFilter(-400,800,-400,800,0.9,0.97)
+    
     agent = Agent(bzrc)
 
     prev_time = time.time()
 
     # Run the agent
     try:
+        gridVisualizer.init_window(801, 801)
         while True:
             time_diff = time.time() - prev_time
-            agent.tick(time_diff)
+            gridVisualizer = agent.tick(time_diff, gridVisualizer)
+            if (time_diff >= 1):
+                gridVisualizer.update_grid()
+                gridVisualizer.draw_grid()
+                prev_time = time.time()
     except KeyboardInterrupt:
         print "Exiting due to keyboard interrupt."
         bzrc.close()
