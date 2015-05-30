@@ -43,7 +43,8 @@ class GridFilter:
         #print occGrid, "\n", np.sum(occGrid)
         for i in xrange(g_x):
             for j in xrange(g_y):
-                self._grid_observations[i][j] = self._grid_observations[i][j] + 1
+                #print ('({},{})').format(startx+i, starty+j)
+                self._grid_observations[i + startx][j + starty] = self._grid_observations[startx+i][starty+j] + 1
                 if (occGrid[i][j] == 1):
                     belief_occupied = self._truepositive * self._grid_filter[i + startx][j + starty]
                     belief_unoccupied = self._truenegative * (1.0 - self._grid_filter[i + startx][j + starty])

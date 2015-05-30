@@ -1,0 +1,1 @@
+./bin/bzrflag --window-size=600x600 --no-report-obstacles --occgrid-width=100 --default-true-positive=.97 --default-true-negative=.9 --red-tanks=10 --green-tank=0 --blue-tanks=0 --purple-tanks=0 --world=four_ls.bzw
