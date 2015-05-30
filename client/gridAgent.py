@@ -52,6 +52,8 @@ class Agent(object):
         # Decide what to do with each of my tanks
         for bot in mytanks:
             self.go_to_goal(bot)
+            t = self.bzrc.get_occgrid(bot.index)
+            print t[1]
 
         # Send the commands to the server
         results = self.bzrc.do_commands(self.commands)
@@ -106,7 +108,47 @@ class Agent(object):
         elif angle > math.pi:
             angle -= 2 * math.pi
         return angle
+    
+    def createPotentialField(self):
+        pass
 
+    def generateObstacles(self, occupancyGrid):
+        gridSizeX = 
+        gridSizeY = 
+        threshhold = 1
+        resolution = 1
+        row = 0
+        column = 0
+        obstacles = []
+        
+        for y in occupancyGrid:
+            first = 0
+            firstPair = False
+            if row % resolution == 0:
+                for x in y:
+                    if x >= threshhold and column == len(occupancyGrid[1]):
+                        obstacles.append([column-1-5,5-row])
+                        if firstPair:
+                            obstacles.append([first-5, 5-row])
+                            first = False
+                        #print ('appended right edge [{},{}]').format(row, first)
+                    elif x >= threshhold:
+                        if not firstPair:
+                            first = column
+                            firstPair = True
+                            #print ('appended left obstacle [{},{}]').format(row, first)
+                    else:
+                        if column != 0 and firstPair:
+                            obstacles.append([first-5, 5-row])
+                            obstacles.append([column-1-5, 5-row])
+                            firstPair = False
+                            #print ('appended right obstacle [{},{}]').format(row, first)
+                    column = column + 1   
+            column = 0
+            row = row + 1
+        row = 0
+        
+        print obstacles
 
 def main():
     # Process CLI arguments.
