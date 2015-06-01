@@ -380,7 +380,9 @@ def main():
     #bzrc = BZRC(host, int(port), debug=True)
     bzrc = BZRC(host, int(port))
     
-    gridVisualizer = GridFilter(-400,800,-400,800,0.9,0.97)
+    constants = bzrc.get_constants()
+    
+    gridVisualizer = GridFilter(-400,800,-400,800,constants['truenegative'],constants['truepositive'])
 
     agent = Agent(bzrc)
 

@@ -27,13 +27,15 @@ class GridFilter:
         self._miny = minY
         self._rangey = widthY
         
-        self._truenegative = trueNegative
-        self._truepositive = truePositive
+        self._truenegative = float(trueNegative)
+        self._truepositive = float(truePositive)
         
         self._grid_observations = np.zeros((widthX+1, widthY+1))
         #self._grid_occupancies = np.zeros((widthX+1, widthY+1))
         self._grid_filter = 0.75*np.ones((widthX+1, widthY+1))
         self._grid_draw = np.zeros((widthX+1, widthY+1))
+        
+        print "Grid initialized, expecting true-positive of ", truePositive, " and true-negative of ", trueNegative
     
     def recordObservationGrid(self, xCoord, yCoord, occGrid):
         # update the model based on the grid
@@ -53,9 +55,10 @@ class GridFilter:
                     belief_occupied = (1 - self._truepositive) * self._grid_filter[i + startx][j + starty]
                     belief_unoccupied = (1 - self._truenegative) * (1.0 - self._grid_filter[i + startx][j + starty])
                     self._grid_filter[i + startx][j + starty] = belief_occupied / (belief_occupied + belief_unoccupied)
-       
+    
+    ''' # unused - occgrid call handles this   
     def stringToGrid(self, inputString, xCoord, yCoord):
-        ''' returns a correctly rotated numpy matrix'''
+        #returns a correctly rotated numpy matrix
         lines = inputString.splitlines()
         cols = len(lines)
         rows = len(lines[0])
@@ -67,6 +70,7 @@ class GridFilter:
         final_height = min(cols, self._rangey + 1 + self._miny - yCoord)
         grid = grid[0:final_width,0:final_height]
         return grid
+    '''
 
     def draw_grid(self):
         # This assumes you are using a numpy array for your grid
@@ -94,7 +98,7 @@ class GridFilter:
                     #print i,j
                     self._grid_draw[j][i] = 0.5
         grid = self._grid_draw
-        #print np.sum(grid)
+        print "Probability that the grid space at coordinates (100, 100) is occupied is ", self._grid_filter[500][500]
     
     def init_window(self, width, height):
         global window
