@@ -78,18 +78,21 @@ class GridFilter:
     
     def update_grid(self):
         global grid
-        threshold_occ = 0.7
+        threshold_occ = 0.9
+        threshold_unocc = 0.6
         #print np.shape(self._grid_filter)
         #print np.shape(self._grid_draw)
         for i in xrange(self._rangex):
             for j in xrange(self._rangey):
-                self._grid_draw[j][i] = self._grid_filter[i][j]
-                '''
+                #self._grid_draw[j][i] = self._grid_filter[i][j]
+                
                 if (self._grid_filter[i][j] >= threshold_occ):
                     self._grid_draw[j][i] = 0
+                elif (self._grid_filter[i][j] <= threshold_unocc):
+                    self._grid_draw[j][i] = 1
                 else:
                     #print i,j
-                    self._grid_draw[j][i] = 1'''
+                    self._grid_draw[j][i] = 0.5
         grid = self._grid_draw
         #print np.sum(grid)
     
