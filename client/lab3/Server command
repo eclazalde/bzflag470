@@ -1,1 +1,1 @@
-./bin/bzrflag --window-size=600x600 --blue-tanks=0 --purple-tanks=0 --red-tanks=1 --green-tank=1 --default-posnoise=0 --world=maps/empty_condensed.bzw
+./bin/bzrflag --window-size=600x600 --blue-tanks=0 --purple-tanks=0 --red-tanks=1 --green-tank=1 --default-posnoise=0 --world=maps/empty_condensed.bzw --red-port=44444 --green-port=55555

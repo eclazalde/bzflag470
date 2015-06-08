@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 from bzrc import *
+from sympy.physics.quantum.circuitplot import matplotlib
 #from scipy.stats import multivariate_normal
 
 class KalmanFilter:
@@ -113,7 +114,7 @@ class KalmanFilter:
         newtime = time.time()
         timediff = newtime - self._prevtime
         if (timediff < self._timestep):
-            return # need to wait a little longer
+            return # respect the time step
         self._prevtime = newtime
         if (len(others) > 0):
             self._latestActual = (others[0].x, others[0].y)
@@ -128,29 +129,34 @@ class KalmanFilter:
         
         # covariance
         self._cov_new = (self._I - K_new * self._H) * (self._F * self._cov_old * self._F_transpose + self._covMatrix)
+
         
-        # mean
-        #self._mu_new = self._F * self._mu_old + K_new * (Z_new - self._H * self._F * self._mu_old)
+        # make a matrix from the current observation
+        x = np.matrix([
+                       [self._latestActual[0]],
+                       [0],
+                       [0],
+                       [self._latestActual[1]],
+                       [0],
+                       [0]
+                       ])
         
+        Z_new = self._H * x + self._posNoise * np.random.randn()
+        
+        self._mu_new = self._F * self._mu_old + K_new * (Z_new - self._H * self._F * self._mu_old)
+        
+        return
+    
+    def getMu(self):
+        return self._mu_new
         
         
     def updateViz(self):
         #try:
         self._fig.gca().clear()
         ''' TODO: plot things '''
-        '''
-        mu = [0, 0]
-        #sigma = [10 0; 0 10]
-        covar = [[10, 0],[0, 50]]
-        #self._fig.gca().contour(np.random.multivariate_normal(mean, cov, 5000))
-        x = np.linspace(-400,400)
-        y = np.linspace(-400,400)
-        x,y = np.meshgrid(x,y)
-        xy = np.column_stack([x.flat, y.flat])
-        z = multivariate_normal.pdf(xy, mean=mu, cov=covar)
-        '''
-        # just tick on the first quadrant
-        self._fig.gca().add_patch(plt.Rectangle((self._prevtime % 400 - 5,self._prevtime % 400 - 5), 10, 10, color='r', fill=False))
+        self._fig.gca().add_patch(matplotlib.patches.Ellipse((self._mu_new[0,0], self._mu_new[3,0]), width=2*self._cov_new[0,0], height=2*self._cov_new[3,3], color='b', fill=False))
+        self._fig.gca().add_patch(plt.Rectangle((self._mu_new[0,0]-5, self._mu_new[3,0]-5), 10, 10, color='r', fill=False))
         self._fig.gca().add_patch(plt.Circle(self._latestActual, radius=5, color='g', fill=True))
         self._fig.canvas.draw()
         #except:
