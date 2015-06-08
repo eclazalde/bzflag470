@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as ptch
 import time
 from bzrc import *
-from sympy.physics.quantum.circuitplot import matplotlib
+
 #from scipy.stats import multivariate_normal
 
 class KalmanFilter:
@@ -141,6 +142,8 @@ class KalmanFilter:
                        [0]
                        ])
         
+        #x_new
+        
         Z_new = self._H * x + self._posNoise * np.random.randn()
         
         self._mu_new = self._F * self._mu_old + K_new * (Z_new - self._H * self._F * self._mu_old)
@@ -148,14 +151,14 @@ class KalmanFilter:
         return
     
     def getMu(self):
-        return self._mu_new
+        return [self._mu_new[0,0], self._mu_new[3,0]]
         
         
     def updateViz(self):
         #try:
         self._fig.gca().clear()
         ''' TODO: plot things '''
-        self._fig.gca().add_patch(matplotlib.patches.Ellipse((self._mu_new[0,0], self._mu_new[3,0]), width=2*self._cov_new[0,0], height=2*self._cov_new[3,3], color='b', fill=False))
+        self._fig.gca().add_patch(ptch.Ellipse((self._mu_new[0,0], self._mu_new[3,0]), width=2*self._cov_new[0,0], height=2*self._cov_new[3,3], color='b', fill=False))
         self._fig.gca().add_patch(plt.Rectangle((self._mu_new[0,0]-5, self._mu_new[3,0]-5), 10, 10, color='r', fill=False))
         self._fig.gca().add_patch(plt.Circle(self._latestActual, radius=5, color='g', fill=True))
         self._fig.canvas.draw()

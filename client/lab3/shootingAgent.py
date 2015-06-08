@@ -5,6 +5,7 @@ from threading import Timer
 from bzrc import BZRC, Command
 import sys, math, time, numpy
 from CustomFieldClass import Field
+from KalmanClass import KalmanFilter
 
 # An incredibly simple agent.  All we do is find the closest enemy tank, drive
 # towards it, and shoot.  Note that if friendly fire is allowed, you will very
@@ -27,6 +28,8 @@ from CustomFieldClass import Field
 #################################################################
 
 class Agent(object):
+    
+    _KF = None
      
     def __init__(self, bzrc):
         self.bzrc = bzrc
@@ -38,6 +41,7 @@ class Agent(object):
         self.shotspeed = 100
         self.prevpos = [0,0]
         self.targetvel = [0, 0]
+        self._KF = KalmanFilter(5) # have to set manually as bzrc.get_constants doesn't return this
         
     def tick(self, step, calcVel, velStep):
         '''Some time has passed; decide what to do next'''
@@ -48,19 +52,23 @@ class Agent(object):
         self.flags = flags
         self.shots = shots
         self.enemies = [tank for tank in othertanks if tank.color !=
-                self.constants['team']]                            
+                self.constants['team']]
+        
+        self._KF.makeObservation(self.bzrc)                            
                                                     
         # Reset my set of commands (we don't want to run old commands)
         self.commands = []
 
         if calcVel:
-            self.target = [othertanks[0].x,othertanks[0].y]
+            #self.target = [othertanks[0].x,othertanks[0].y]
+            self.target = self._KF.getMu()
             self.targetvel = self.getVel(self.target, velStep)
             #print self.targetvel
 
         # Decide what to do with each of my tanks
         for bot in mytanks:
-            self.target = [othertanks[0].x,othertanks[0].y]
+            #self.target = [othertanks[0].x,othertanks[0].y]
+            self.target = self._KF.getMu()
             if othertanks[0].status == 'alive':
                 self.location = [bot.x, bot.y]
                 tpoint = self.getTargetPoint(bot, self.target, self.targetvel)
@@ -121,6 +129,9 @@ class Agent(object):
         yn = targetpos[1] + targetvel[1] * 25 * timeTotarget
         #print 'Tank:[{},{}] Shoot at:[{},{}]'.format(targetpos[0], targetpos[1], xn, yn)
         return [xn, yn]
+    
+    def updateVisualization(self):
+        self._KF.updateViz()
   
 def main():
     # Process CLI arguments.
@@ -142,22 +153,29 @@ def main():
 
     prev_tick = time.time()
     vel_tick = time.time()
+    viz_tick = time.time()
     calulateVel = False
     velStep = .5
+    vizStep = 1.0
     step = .001
 
     # Run the agent
     try:
         while True:
-            time_diff = time.time() - prev_tick
-            vel_diff = time.time() - vel_tick
+            newtime = time.time()
+            time_diff = newtime - prev_tick
+            vel_diff = newtime - vel_tick
+            viz_diff = newtime - viz_tick
             if vel_diff >= velStep:
                 calulateVel = True
-                vel_tick = time.time()
+                vel_tick = newtime
             if time_diff >= step:
                 agent.tick(time_diff, calulateVel, velStep)
-                prev_tick = time.time()
+                prev_tick = newtime
                 calulateVel = False
+            if viz_diff >= vizStep:
+                agent.updateVisualization()
+                viz_tick = newtime
     except KeyboardInterrupt:
         print "Exiting due to keyboard interrupt."
         bzrc.close()
