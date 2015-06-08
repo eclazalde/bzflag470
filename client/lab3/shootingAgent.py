@@ -55,25 +55,22 @@ class Agent(object):
                 self.constants['team']]
         
         self._KF.makeObservation(self.bzrc)                            
-                                                    
+                                         
         # Reset my set of commands (we don't want to run old commands)
         self.commands = []
 
         if calcVel:
-            #self.target = [othertanks[0].x,othertanks[0].y]
             self.target = self._KF.getMu()
             self.targetvel = self.getVel(self.target, velStep)
-            #print self.targetvel
+            self.prevpos = self.target
 
         # Decide what to do with each of my tanks
         for bot in mytanks:
-            #self.target = [othertanks[0].x,othertanks[0].y]
             self.target = self._KF.getMu()
             if othertanks[0].status == 'alive':
                 self.location = [bot.x, bot.y]
                 tpoint = self.getTargetPoint(bot, self.target, self.targetvel)
                 self.turnTank(bot, tpoint[0], tpoint[1], step)
-                self.prevpos = self.target
             else:
                 #print "No enemy. Searching..."
                 command = Command(bot.index, 0, 0, False)
@@ -86,8 +83,8 @@ class Agent(object):
         # Tune these or set to zero to manipulate the PD controller
         distance = math.sqrt(math.pow(targetx - bot.x, 2) + math.pow(targety - bot.y, 2))
         shootingThreshold = .001
-        kProportion = 1 + 50 * (1 - distance / 800)
-        kDerivative = .1
+        kProportion = 1 + 5 * (1 - distance / 800)
+        kDerivative = .5
         errorPrevStep = 0.0 # Previous error is zero if this is the first calculation.
 
         # Update the previous error to the last saved error if there is one
@@ -98,7 +95,6 @@ class Agent(object):
         angleReference = numpy.arctan2(targety - self.location[1], targetx - self.location[0])
         angle = angleReference - bot.angle
         errorAtStep =  numpy.arctan2(math.sin(angle),math.cos(angle))
-        
         # This is the PD formula
         angularAtStep = (kProportion * angle) + (kDerivative * ((angle - errorPrevStep) / step))
         if angularAtStep > 1:
@@ -125,8 +121,8 @@ class Agent(object):
     def getTargetPoint(self, bot, targetpos, targetvel):
         disTotarget = math.sqrt(math.pow(targetpos[0] - bot.x, 2) + math.pow(targetpos[1] - bot.y, 2))
         timeTotarget = disTotarget / self.shotspeed
-        xn = targetpos[0] + targetvel[0] * 25 * timeTotarget
-        yn = targetpos[1] + targetvel[1] * 25 * timeTotarget
+        xn = targetpos[0] + targetvel[0] * 1 * timeTotarget
+        yn = targetpos[1] + targetvel[1] * 1 * timeTotarget
         #print 'Tank:[{},{}] Shoot at:[{},{}]'.format(targetpos[0], targetpos[1], xn, yn)
         return [xn, yn]
     
