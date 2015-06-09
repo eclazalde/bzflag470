@@ -60,7 +60,7 @@ class Agent(object):
         self.commands = []
 
         if calcVel:
-            self.target = self._KF.getMu()
+            self.target = self._KF.getMuAvg()
             self.targetvel = self.getVel(self.target, velStep)
             self.prevpos = self.target
 
@@ -82,7 +82,7 @@ class Agent(object):
     def turnTank(self, bot, targetx, targety, step):        
         # Tune these or set to zero to manipulate the PD controller
         distance = math.sqrt(math.pow(targetx - bot.x, 2) + math.pow(targety - bot.y, 2))
-        shootingThreshold = .001
+        shootingThreshold = .01
         kProportion = 1 + 5 * (1 - distance / 800)
         kDerivative = .5
         errorPrevStep = 0.0 # Previous error is zero if this is the first calculation.
@@ -151,7 +151,7 @@ def main():
     vel_tick = time.time()
     viz_tick = time.time()
     calulateVel = False
-    velStep = .5
+    velStep = .25
     vizStep = 1.0
     step = .001
 

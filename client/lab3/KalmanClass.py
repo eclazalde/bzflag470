@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as ptch
 import time
+import Queue
 from bzrc import *
 
 #from scipy.stats import multivariate_normal
@@ -32,9 +33,11 @@ class KalmanFilter:
     _killCount = 0
     _justKilled = False
     
+    _mu_queue = None
+    
     
     # set when initializing the class per parameter
-    _posNoise = 2
+    _posNoise = 5
     
     # following can all be tweaked
     T = 0.001
@@ -50,6 +53,8 @@ class KalmanFilter:
         self._prevtime = time.time()
         
         self._posNoise = positionNoise
+        
+        self._mu_queue = Queue.Queue(maxsize=10)
         
         self._F = np.matrix([
                              [1, self.T,    ((self.T**2)/2), 0, 0,        0],
@@ -168,6 +173,10 @@ class KalmanFilter:
         #mean
         self._mu_new = (self._F * observation) + K_new * (Z_new - (self._H * self._F * observation))
         
+        if (self._mu_queue.full()):
+            self._mu_queue.get_nowait()
+        else:
+            self._mu_queue.put_nowait([self._mu_new[0,0], self._mu_new[3,0]])
         return
     
     def getPrediction(self):
@@ -181,6 +190,17 @@ class KalmanFilter:
         # print self._mu_new
         return [self._mu_new[0,0], self._mu_new[3,0]]
         
+    def getMuAvg(self):
+        x = 0
+        y = 0
+        s = self._mu_queue.qsize()
+        if (s == 0):
+            return [0,0]
+        for i in xrange(s):
+            t = self._mu_queue.get(block=True, timeout=None)
+            x += t[0]
+            y += t[1]
+        return [x/s,y/s]
         
     def updateViz(self):
         #try:
@@ -195,7 +215,7 @@ class KalmanFilter:
         self._fig.gca().add_patch(plt.Rectangle((self._mu_new[0,0]-5, self._mu_new[3,0]-5), 10, 10, color='r', fill=False))
         # general prediction using F and mu
         # self._fig.gca().add_patch(plt.Circle(self.getPrediction(), radius=5, color='m', fill=False))
-        
+        #print self.getMuAvg()
         self._fig.canvas.draw()
         #except:
         #    print "Viz update failed"
