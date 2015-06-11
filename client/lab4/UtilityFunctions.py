@@ -1,15 +1,22 @@
 from string import *
+from numpy import random
 
 class UtilityFunctions:
     
     _filepath = None
     _nGramDict = None
     
-    def __init__(self, FilePath="./training_dataset.txt"):
+    def __init__(self, FilePath="./training_dataset_small.txt"):
         self._filepath = FilePath
         self._nGramDict = dict()
-        
+    
+    def setFilePath(self, FilePath):
+        ''' Set the path of the file to parse '''
+        self._filepath = FilePath
+    
     def loadFile(self):
+        ''' Loads the file into memory and builds an n-gram dictionary '''
+        self._nGramDict = dict()
         f = open(self._filepath, 'r')
         for f_line in f:
             f_line_parts = split(f_line, sep=None)
@@ -31,5 +38,36 @@ class UtilityFunctions:
                 w_previous = w_next
                 
     def getNGramDictionary(self):
+        ''' Returns the full n-gram dictionary object '''
         return self._nGramDict
+    
+    def getFilePath(self):
+        ''' Returns the path of the file to be / most recently parsed '''
+        return self._filepath
         
+    def calculateNGramProbabilities(self):
+        ''' Convert the n-gram word counts to probabilities '''
+        for k in self._nGramDict:
+            v = self._nGramDict[k]
+            t = 0.0 # total word count
+            for w_k, w_v in v.iteritems():
+                t += w_v
+            for w_k, w_v in v.iteritems():
+                v[w_k] = w_v / t
+    
+    def optimizeNGramDictionary(self):
+        ''' Build an optimized n-gram dictionary with only the highest-probability words. '''
+        optimized = dict()
+        for k in self._nGramDict:
+            v = self._nGramDict[k]
+            max = 0
+            max_v = ""
+            for w_k, w_v in v.iteritems():
+                if (w_v > max):
+                    max = w_v
+                    max_v = w_k
+                elif (w_v == max):
+                    if (random.random() < 0.5):
+                        max_v = w_k
+            optimized[k] = max_v
+        return optimized
