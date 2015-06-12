@@ -27,19 +27,27 @@ class UtilityFunctions:
                 w_previous = None
                 for w in f_line_parts:
                     w_parts = split(w, sep='_')
+                    if (self.discardPart(w_parts[1])):
+                        continue
                     w_next = w_parts[0]
                     if (w_previous): # skip the first word
                         if w_previous in self._nGramDict:
                             d = self._nGramDict.get(w_previous)
-                            v = 0 # number of occurrences
-                            if w_next in d:
-                                v = d.get(w_next)
-                            v += 1
-                            d[w_next] = v
+                            d.append(w_next)
                         else:
-                            d = dict([(w_next, 1)])
+                            d = list([w_next])
                             self._nGramDict[w_previous] = d  
-                    w_previous = w_next  
+                    w_previous = w_next
+            f.close()
+            
+    def discardPart(self, tag):
+        if tag in ("CC","CD","DT","EX","FW","IN","JJ","JJR","JJS","LS",
+                   "MD","NN","NNP","NNPS","NNS","PDT","POS","PRP","PRP$",
+                   "RB","RBR","RBS","RP","TO","UH","VB","VBD",
+                   "VBG","VBN","VBP","VBZ","WDT","WP","WP$","WRB"): # "SYM" excluded
+            return False
+        return True
+    
                       
     def getNGramDictionary(self):
         ''' Returns the full n-gram dictionary object '''
@@ -48,30 +56,41 @@ class UtilityFunctions:
     def getFilePath(self):
         ''' Returns the path of the file to be / most recently parsed '''
         return self._filepath
-        
-    def calculateNGramProbabilities(self):
-        ''' Convert the n-gram word counts to probabilities '''
-        for k in self._nGramDict:
-            v = self._nGramDict[k]
-            t = 0.0 # total word count
-            for w_k, w_v in v.iteritems():
-                t += w_v
-            for w_k, w_v in v.iteritems():
-                v[w_k] = w_v / t
-    
-    def optimizeNGramDictionary(self):
-        ''' Build an optimized n-gram dictionary with only the highest-probability words. '''
-        optimized = dict()
-        for k in self._nGramDict:
-            v = self._nGramDict[k]
-            max = 0
-            max_v = ""
-            for w_k, w_v in v.iteritems():
-                if (w_v > max):
-                    max = w_v
-                    max_v = w_k
-                elif (w_v == max):
-                    if (random.random() < 0.5):
-                        max_v = w_k
-            optimized[k] = max_v
-        return optimized
+           
+    def performNGramTest(self, TestFilePath="./testing_dataset.txt"):
+        f = open(self._filepath, 'r')
+        all_lines = f.readlines()
+        f.close()
+        r_line = random.choice(all_lines)
+        r_line_parts = split(r_line, sep=None)
+        i = 0
+        actual = ""
+        constructed = ""
+        previous_word = ""
+        word_count = 0.0
+        match_success = 0.0
+        for w in r_line_parts:
+            w_parts = split(w, sep='_')
+            if (self.discardPart(w_parts[1])):
+                actual += w_parts[0]
+                constructed += w_parts[0]
+                continue
+            actual += (" " + w_parts[0])
+            if (word_count > 0):
+                try:
+                    previous_word = random.choice(self._nGramDict[previous_word])
+                except:
+                    print "Error: Unable to find any matching n-grams for", previous_word
+                    return
+                constructed += (" " + previous_word)
+                if (previous_word == w_parts[0]):
+                    match_success += 1
+            else:
+                constructed += (" " + w_parts[0])
+                previous_word = w_parts[0]
+            word_count += 1
+                
+        #print strip(r_line)
+        print "Actual: ", actual
+        print "Constructed: ", constructed
+        print "Match Success Rate: ", (match_success / word_count)
