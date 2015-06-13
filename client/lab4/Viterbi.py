@@ -67,7 +67,7 @@ def print_dptable(V):
             o += ',{}'.format(v[y])#",%.7s" % ("%f" % v[y])
         f.write(o + "\n")
         s += "\n"
-    print(s)
+    #print(s)
     f.close()
     
 def example():
