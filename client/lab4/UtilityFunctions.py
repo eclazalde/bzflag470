@@ -140,6 +140,7 @@ class UtilityFunctions:
                         prev_tag = word_parts['tag']
                         # update the emission probabilities
                         self.addEmission(word_parts['tag'], word_parts['word'])
+            training_file.close()
         finally:
             print "Training of", FilePath,"completed."
     

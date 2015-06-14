@@ -43,6 +43,7 @@ class Viterbi:
         if len(observations) != 1:
             n = t
         self.saveTable(V)
+        self.saveTable2(V)
         vlist = []
         for y in states:
             value = V[n][y]
@@ -65,4 +66,23 @@ class Viterbi:
             f.write(o + "\n")
             #s += "\n"
         #print(s)
+        f.close()
+        
+    def saveTable2(self, V):
+        f = open("table2.csv",'w')
+        f.write("\"Tag:\",")
+        for col_no in range(len(V)):
+            f.write("\"{:0f}\",".format(col_no))
+        f.write("\n")
+        for tag in V[0]:
+            output = "\""+tag+"\","
+            for tag2 in V:
+                val = tag2[tag]
+                if (val == 0):
+                    output += "\"---\","
+                elif (val < 0.00001): # less than 0.001% probability
+                    output += "\"< 0.001 %\","
+                else:
+                    output += "\"{:.3f} %\",".format(val)
+            f.write(output + "\n")
         f.close()

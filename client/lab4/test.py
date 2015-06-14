@@ -7,7 +7,7 @@ from Viterbi import Viterbi
 # Test for the tagged parser
 #============================================
 
-fileName1 = '/home/okiobe/470/bzflag470/client/lab4/small_test.txt'
+fileName1 = './small_test.txt'
 
 data1 = TaggedParser(fileName1)
 
@@ -21,7 +21,7 @@ data1.parse()
 # Test for the untagged parser
 #============================================
 '''
-fileName2 = '/home/okiobe/470/bzflag470/client/lab4/small_test2.txt'
+fileName2 = './small_test2.txt'
 
 data2 = UntaggedParser(fileName2)
 
@@ -33,7 +33,7 @@ for s in data2.sentences:
 #============================================
 # Test for the Viterbi class
 #============================================
-fileName3 = '/home/okiobe/470/bzflag470/client/lab4/training_dataset.txt'
+fileName3 = './training_dataset.txt'
 
 data = UtilityFunctions()
 vit = Viterbi()
