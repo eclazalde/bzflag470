@@ -9,7 +9,9 @@ class UtilityFunctions:
     _nGramDictionary = None
     _tagList = None
     _startingProbabilities = None
-    _startingTotal = 0
+    _startingTotal = 0.0
+    _transitionProbabilities = None
+    _emissionProbabilities = None
     
     def __init__(self):
         self.reset()
@@ -22,9 +24,11 @@ class UtilityFunctions:
     
     def reset(self):
         self._nGramDictionary = dict()
-        self._startingProbabilities = dict()
         self._tagList = dict()
+        self._startingProbabilities = dict()
         self._startingTotal = 0.0
+        self._transitionProbabilities = dict()
+        self._emissionProbabilities = dict()
         
     def getParts(self, word):
         p = split(word, '_')
@@ -64,20 +68,44 @@ class UtilityFunctions:
         return (self._startingProbabilities.get(tag_start, 0.0) / self._startingTotal)
     
     def addTransition(self, tag_prev, tag_next):
-        # print "addTransition not yet implemented"
+        e = self._transitionProbabilities.get(tag_prev)
+        if (e):
+            # list of two items: (total_count, dict([(tag, tag_count)])
+            total_count = (e[0] + 1.0)
+            d = e[1]
+            g = d.get(tag_next, 0.0)
+            d[tag_next] = (g + 1.0)
+            self._transitionProbabilities[tag_prev] = [total_count, d]
+        else:
+            self._transitionProbabilities[tag_prev] = [1.0, dict([(tag_next, 1.0)])]
         return
         
     def getTransition(self, tag_prev, tag_next):
-        # print "getTransition not yet implemented"
-        return 0
+        e = self._transitionProbabilities.get(tag_prev)
+        if (e):
+            f = e[1].get(tag_next, 0.0)
+            return (f / e[0])
+        return 0.0
         
     def addEmission(self, tag, word):
-        # print "addEmission not yet implemented"
+        e = self._emissionProbabilities.get(tag)
+        if (e):
+            # list of two items: (total_count, dict([(word, word_count)])
+            total_count = (e[0] + 1.0)
+            d = e[1]
+            g = d.get(word, 0.0)
+            d[word] = (g + 1.0)
+            self._emissionProbabilities[tag] = [total_count, d]
+        else:
+            self._emissionProbabilities[tag] = [1.0, dict([(word, 1.0)])]
         return
         
     def getEmission(self, tag, word):
-        # print "getEmission not yet implemented"
-        return 0
+        e = self._emissionProbabilities.get(tag)
+        if (e):
+            f = e[1].get(word, 0.0)
+            return (f / e[0])
+        return 0.0
         
     def doTraining(self, FilePath):
         ''' New training function for both n-gram and Markov capabilities '''
