@@ -1,0 +1,7 @@
+The_DT economy_NN 's_POS temperature_NN will_MD be_VB taken_VBN from_IN several_JJ vantage_NN points_NNS this_DT week_NN ,_, with_IN readings_NNS on_IN trade_NN ,_, output_NN ,_, housing_NN and_CC inflation_NN ._.
+The_DT most_RBS troublesome_JJ report_NN may_MD be_VB the_DT August_NNP merchandise_NN trade_NN deficit_NN due_JJ out_IN tomorrow_NN ._.
+The_DT trade_NN gap_NN is_VBZ expected_VBN to_TO widen_VB to_TO about_IN $_$ 9_CD billion_CD from_IN July_NNP 's_POS $_$ 7.6_CD billion_CD ,_, according_VBG to_TO a_DT survey_NN by_IN MMS_NNP International_NNP ,_, a_DT unit_NN of_IN McGraw-Hill_NNP Inc._NNP ,_, New_NNP York_NNP ._.
+Thursday_NNP 's_POS report_NN on_IN the_DT September_NNP consumer_NN price_NN index_NN is_VBZ expected_VBN to_TO rise_VB ,_, although_IN not_RB as_RB sharply_RB as_IN the_DT 0.9_CD %_NN gain_NN reported_VBN Friday_NNP in_IN the_DT producer_NN price_NN index_NN ._.
+That_DT gain_NN was_VBD being_VBG cited_VBD as_IN a_DT reason_NN the_DT stock_NN market_NN was_VBD down_IN early_RB in_IN Friday_NNP 's_POS session_NN ,_, before_IN it_PRP got_VBD started_VBN on_IN its_PRP$ reckless_JJ 190-point_JJ plunge_NN ._.
+Economists_NNS are_VBP divided_VBN as_IN to_TO how_WRB much_JJ manufacturing_VBG strength_NN they_PRP expect_VBP to_TO see_VB in_IN September_NNP reports_NNS on_IN industrial_JJ production_NN and_CC capacity_NN utilization_NN ,_, also_RB due_JJ tomorrow_NN ._.
+Meanwhile_RB ,_, September_NNP housing_NN starts_NNS ,_, due_JJ Wednesday_NNP ,_, are_VBP thought_VBN to_TO have_VB inched_VBN upward_RB ._.
