@@ -7,16 +7,24 @@ class UtilityFunctions:
     # _filepath = None
     #===========================================================================
     _nGramDictionary = None
+    _tagList = None
+    _startingProbabilities = None
+    _startingTotal = 0
     
-    def __init__(self, FilePath="./training_dataset_small.txt"):
-        self._filepath = FilePath
-        self._nGramDictionary = dict()
+    def __init__(self):
+        self.reset()
     
     #===========================================================================
     # def setFilePath(self, FilePath):
     #     ''' Set the path of the file to parse '''
     #     self._filepath = FilePath
     #===========================================================================
+    
+    def reset(self):
+        self._nGramDictionary = dict()
+        self._startingProbabilities = dict()
+        self._tagList = dict()
+        self._startingTotal = 0.0
         
     def getParts(self, word):
         p = split(word, '_')
@@ -25,10 +33,18 @@ class UtilityFunctions:
             return dict([('word', p[0]), ('tag', None)])
         elif (len(p) == 2):
             # tagged
+            self.updateTagList(p[1])
             return dict([('word', p[0]), ('tag', p[1])])
         else:
             print "Error occurred while splitting >",word,"<"
             return None
+    
+    def updateTagList(self, tag):
+        e = self._tagList.get(tag, 0)
+        self._tagList[tag] = (e + 1)
+        
+    def getTagList(self):
+        return self._tagList.keys()
         
     def addNGramWord(self, word_prev, word_next):
         e = self._nGramDictionary.get(word_prev) #(word_prev)
@@ -39,12 +55,13 @@ class UtilityFunctions:
         self._nGramDictionary[word_prev] = e
         
     def addStart(self, tag_start):
-        # print "addStart not yet implemented"
+        e = self._startingProbabilities.get(tag_start, 0)
+        self._startingProbabilities[tag_start] = (e + 1.0)
+        self._startingTotal += 1.0
         return
     
     def getStart(self, tag_start):
-        # print "getStart not yet implemented"
-        return 0
+        return (self._startingProbabilities.get(tag_start, 0.0) / self._startingTotal)
     
     def addTransition(self, tag_prev, tag_next):
         # print "addTransition not yet implemented"
