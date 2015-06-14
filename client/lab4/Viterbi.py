@@ -1,82 +1,61 @@
 class Viterbi:
-    
-    #============================================
-    # Variables
-    #============================================
-    
-    
-    #============================================
-    # Constructor
-    #============================================
-    def __init__(self):
-        pass
-        
     #============================================
     # Functions
     #============================================   
     def viterbi(self, observations, d):
-        V = [{}]
+        MU = [{}]
         path = {}
         states = d.getTagList()
-        
-        # Initialize base cases (t == 0)
-        for y in states:
-            V[0][y] = d.getStart(y) * d.getEmission(y, observations[0])
-            path[y] = [y]
-     
-        # Run Viterbi for t > 0
+
+        for tag in states:
+            MU[0][tag] = d.getStart(tag) * d.getEmission(tag, observations[0])
+            path[tag] = [tag]
+            
         for t in range(1, len(observations)):
-            V.append({})
+            MU.append({})
             newpath = {}
-            for y in states:
-                vlist = []
-                for y0 in states:
-                    calc = V[t-1][y0] * d.getTransition(y0, y) * d.getEmission(y, observations[t])
-                    vlist.append([calc, y0])
-                (prob,state) = max(vlist)
-                V[t][y] = prob
-                newpath[y] = path[state] + [y]
-     
-            # Don't need to remember the old paths
+            for tag in states:
+                muList = []
+                for prevTag in states:
+                    mu = d.getEmission(tag, observations[t]) * d.getTransition(prevTag, tag) *  MU[t-1][prevTag]
+                    muList.append([mu, prevTag])
+                [prob,preTag] = max(muList)
+                MU[t][tag] = prob
+                newpath[tag] = path[preTag] + [tag]
             path = newpath
-        n = 0           # if only one element is observed max is sought in the initialization values
+        currentT = 0
         if len(observations) != 1:
-            n = t
-        self.saveTable(V)
-        self.saveTable2(V)
+            currentT = t
+        self.saveTable(MU)
+        self.saveTable2(MU)
         vlist = []
-        for y in states:
-            value = V[n][y]
-            vlist.append([value, y])
-        (prob, state) = max(vlist)
-        return (prob, path[state])
+        for tag in states:
+            value = MU[currentT][tag]
+            vlist.append([value, tag])
+        [prob, curTag] = max(vlist)
+        return [prob, path[curTag]]
     
-    def saveTable(self, V):
+    def saveTable(self, MU):
         f = open("table.txt","w")
-        #s = "    " + " ".join(("%7d" % i) for i in range(len(V))) + "\n"
-        for i in range(len(V)):
-            f.write(",{}".format(i))
+        for obs in range(len(MU)):
+            f.write(",{}".format(obs))
         f.write("\n")
-        for y in V[0]:
-            #s += "%.5s: " % y
-            o = y
-            #s += " ".join("%.7s" % ("%f" % v[y]) for v in V)
-            for v in V:
-                o += ',{}'.format(v[y])
+        for tag in MU[0]:
+            o = tag
+            for mu in MU:
+                o += ',{}'.format(mu[tag])
             f.write(o + "\n")
-            #s += "\n"
-        #print(s)
         f.close()
         
-    def saveTable2(self, V):
+    def saveTable2(self, MU):
         f = open("table2.csv",'w')
         f.write("\"Tag:\",")
-        for col_no in range(len(V)):
+        for col_no in range(len(MU)):
             f.write("\"{:0f}\",".format(col_no))
         f.write("\n")
-        for tag in V[0]:
+        for tag in MU[0]:
             output = "\""+tag+"\","
-            for tag2 in V:
+            for tag2 in MU:
                 val = tag2[tag]
                 if (val == 0):
                     output += "\"---\","
