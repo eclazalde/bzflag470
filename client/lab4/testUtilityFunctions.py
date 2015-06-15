@@ -5,6 +5,7 @@ uf = UtilityFunctions()
 uf.doTraining("./training_dataset.txt")
 print uf.getTagList()
 
+uf.performNGramTest(TestFilePath="./testing_dataset.txt", numberOfTests=100, verbose=False)
 #===============================================================================
 # l = uf.getTagList()
 # t = 0

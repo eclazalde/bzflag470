@@ -194,42 +194,42 @@ class UtilityFunctions:
     #     return self._filepath
     #===========================================================================
            
-    #===========================================================================
-    # def performNGramTest(self, TestFilePath="./testing_dataset.txt"):
-    #     f = open(self._filepath, 'r')
-    #     all_lines = f.readlines()
-    #     f.close()
-    #     r_line = random.choice(all_lines)
-    #     r_line_parts = split(r_line, sep=None)
-    #     i = 0
-    #     actual = ""
-    #     constructed = ""
-    #     previous_word = ""
-    #     word_count = 0.0
-    #     match_success = 0.0
-    #     for w in r_line_parts:
-    #         w_parts = split(w, sep='_')
-    #         if (self.discardPart(w_parts[1])):
-    #             actual += w_parts[0]
-    #             constructed += w_parts[0]
-    #             continue
-    #         actual += (" " + w_parts[0])
-    #         if (word_count > 0):
-    #             try:
-    #                 previous_word = random.choice(self._nGramDict[previous_word])
-    #             except:
-    #                 print "Error: Unable to find any matching n-grams for", previous_word
-    #                 return
-    #             constructed += (" " + previous_word)
-    #             if (previous_word == w_parts[0]):
-    #                 match_success += 1
-    #         else:
-    #             constructed += (" " + w_parts[0])
-    #             previous_word = w_parts[0]
-    #         word_count += 1
-    #             
-    #     #print strip(r_line)
-    #     print "Actual: ", actual
-    #     print "Constructed: ", constructed
-    #     print "Match Success Rate: ", (match_success / word_count)
-    #===========================================================================
+    def performNGramTest(self, TestFilePath="./testing_dataset.txt", numberOfTests=10, verbose=True):
+        f = open(TestFilePath, 'r')
+        all_lines = f.readlines()
+        f.close()
+        print "\nCommencing first order n-gram testing on",TestFilePath,"with",numberOfTests,"iterations."
+        total_word_count = 0.0
+        total_success = 0.0
+        total_average = 0.0
+        for iteration in range(numberOfTests):
+            r_line = random.choice(all_lines)
+            r_line_parts = split(r_line, sep=None)
+            actual = ""
+            constructed = ""
+            previous_word = ""
+            word_count = 0.0
+            match_success = 0.0
+            for w in r_line_parts:
+                w_parts = self.getParts(w)
+                actual += (" " + w_parts['word'])
+                if (word_count > 0):
+                    previous_word = random.choice(self._nGramDictionary.get(previous_word, ['the']))
+                    constructed += (" " + previous_word)
+                    if (previous_word == w_parts['word']):
+                        match_success += 1
+                else:
+                    constructed += (" " + w_parts['word'])
+                    previous_word = w_parts['word']
+                word_count += 1
+            if (verbose):
+                print "Actual: ", actual
+                print "Constructed: ", constructed
+                print "Match Success Rate: {:.2%}".format(match_success / word_count)
+            total_word_count += word_count
+            total_success += match_success
+            total_average += (match_success / word_count)
+        print "Total Word Count:",total_word_count
+        print "Total Matches:",total_success
+        print "Non-weighted Average Success Rate: {:.2%}".format(total_average / numberOfTests)
+        print "Weighted Average Success Rate {:.2%}".format(total_success / total_word_count)

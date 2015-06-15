@@ -50,3 +50,12 @@ print result[1]
 
 print 'Actual Tags'
 print data1.tags[0]
+
+success = 0.0
+total = len(result[1])
+for i in range(total):
+    if (result[1][i] == data1.tags[0][i]):
+        success += 1.0
+print "Success Rate: {:.2%}".format(success / total)
+
+data.performNGramTest(TestFilePath="./testing_dataset.txt", numberOfTests=100, verbose=False)
