@@ -59,3 +59,7 @@ for i in range(total):
 print "Success Rate: {:.2%}".format(success / total)
 
 data.performNGramTest(TestFilePath="./testing_dataset.txt", numberOfTests=100, verbose=False)
+
+data.exportNGramPriors()
+
+data.exportNGramTransitions()
