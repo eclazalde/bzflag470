@@ -27,7 +27,7 @@ class Viterbi:
         if len(observations) != 1:
             currentT = t
         self.saveTable(MU)
-        self.saveTable2(MU)
+        #self.saveTable2(MU)
         vlist = []
         for tag in states:
             value = MU[currentT][tag]
