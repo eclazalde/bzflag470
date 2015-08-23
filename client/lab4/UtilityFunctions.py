@@ -1,5 +1,6 @@
 from string import *
-from numpy import random
+import numpy as np
+from collections import Counter
 
 class UtilityFunctions:
     
@@ -12,6 +13,8 @@ class UtilityFunctions:
     _startingTotal = 0.0
     _transitionProbabilities = None
     _emissionProbabilities = None
+    _totalWordCount = 0.0
+    _wordCountDict = None
     
     def __init__(self):
         self.reset()
@@ -29,6 +32,8 @@ class UtilityFunctions:
         self._startingTotal = 0.0
         self._transitionProbabilities = dict()
         self._emissionProbabilities = dict()
+        self._totalWordCount = 0.0
+        self._wordCountDict = dict()
         
     def getParts(self, word):
         p = split(word, '_')
@@ -37,7 +42,6 @@ class UtilityFunctions:
             return dict([('word', p[0]), ('tag', None)])
         elif (len(p) == 2):
             # tagged
-            self.updateTagList(p[1])
             return dict([('word', p[0]), ('tag', p[1])])
         else:
             print "Error occurred while splitting >",word,"<"
@@ -46,6 +50,17 @@ class UtilityFunctions:
     def updateTagList(self, tag):
         e = self._tagList.get(tag, 0)
         self._tagList[tag] = (e + 1)
+        
+    def updateWordList(self, word):
+        e = self._wordCountDict.get(word, 0)
+        self._wordCountDict[word] = (e + 1)
+        self._totalWordCount += 1
+        
+    def countWordsAndTags(self, parts):
+        if (parts['word']):
+            self.updateWordList(parts['word'])
+        if (parts['tag']):
+            self.updateTagList(parts['tag'])
         
     def getTagList(self):
         return self._tagList.keys()
@@ -119,6 +134,7 @@ class UtilityFunctions:
                 for line_word in file_line_parts:
                     # get the "word" and tag, if any
                     word_parts = self.getParts(line_word)
+                    self.countWordsAndTags(word_parts)
                     if (word_parts == None): # word did not parse correctly
                         continue
                     if (word_parts['tag'] == None): # no tag provided
@@ -194,42 +210,66 @@ class UtilityFunctions:
     #     return self._filepath
     #===========================================================================
            
-    #===========================================================================
-    # def performNGramTest(self, TestFilePath="./testing_dataset.txt"):
-    #     f = open(self._filepath, 'r')
-    #     all_lines = f.readlines()
-    #     f.close()
-    #     r_line = random.choice(all_lines)
-    #     r_line_parts = split(r_line, sep=None)
-    #     i = 0
-    #     actual = ""
-    #     constructed = ""
-    #     previous_word = ""
-    #     word_count = 0.0
-    #     match_success = 0.0
-    #     for w in r_line_parts:
-    #         w_parts = split(w, sep='_')
-    #         if (self.discardPart(w_parts[1])):
-    #             actual += w_parts[0]
-    #             constructed += w_parts[0]
-    #             continue
-    #         actual += (" " + w_parts[0])
-    #         if (word_count > 0):
-    #             try:
-    #                 previous_word = random.choice(self._nGramDict[previous_word])
-    #             except:
-    #                 print "Error: Unable to find any matching n-grams for", previous_word
-    #                 return
-    #             constructed += (" " + previous_word)
-    #             if (previous_word == w_parts[0]):
-    #                 match_success += 1
-    #         else:
-    #             constructed += (" " + w_parts[0])
-    #             previous_word = w_parts[0]
-    #         word_count += 1
-    #             
-    #     #print strip(r_line)
-    #     print "Actual: ", actual
-    #     print "Constructed: ", constructed
-    #     print "Match Success Rate: ", (match_success / word_count)
-    #===========================================================================
+    def performNGramTest(self, TestFilePath="./testing_dataset.txt", numberOfTests=10, verbose=True):
+        f = open(TestFilePath, 'r')
+        all_lines = f.readlines()
+        f.close()
+        print "\nCommencing first order n-gram testing on",TestFilePath,"with",numberOfTests,"iterations."
+        total_word_count = 0.0
+        total_success = 0.0
+        total_average = 0.0
+        for iteration in range(numberOfTests):
+            r_line = np.random.choice(all_lines)
+            r_line_parts = split(r_line, sep=None)
+            actual = ""
+            constructed = ""
+            previous_word = ""
+            word_count = 0.0
+            match_success = 0.0
+            for w in r_line_parts:
+                w_parts = self.getParts(w)
+                actual += (" " + w_parts['word'])
+                if (word_count > 0):
+                    previous_word = np.random.choice(self._nGramDictionary.get(previous_word, ['the']))
+                    constructed += (" " + previous_word)
+                    if (previous_word == w_parts['word']):
+                        match_success += 1
+                else:
+                    constructed += (" " + w_parts['word'])
+                    previous_word = w_parts['word']
+                word_count += 1
+            if (verbose):
+                print "Actual: ", actual
+                print "Constructed: ", constructed
+                print "Match Success Rate: {:.2%}".format(match_success / word_count)
+            total_word_count += word_count
+            total_success += match_success
+            total_average += (match_success / word_count)
+        print "Total Word Count:",total_word_count
+        print "Total Matches:",total_success
+        print "Non-weighted Average Success Rate: {:.2%}".format(total_average / numberOfTests)
+        print "Weighted Average Success Rate {:.2%}".format(total_success / total_word_count)
+    
+    def exportNGramPriors(self):
+        wf = open("NGramPriors.csv",'w')
+        wf.write("\"Word\",\"Occurrences\",\"Probability\",\n")
+        for k in self._wordCountDict:
+            wf.write("\""+k+"\","+str(self._wordCountDict[k])+",\"{:.3%}\",\n".format(self._wordCountDict[k] / self._totalWordCount))
+        wf.close()
+        print "n-gram priors exported"
+    
+    def exportNGramTransitions(self):
+        wf = open("NGramTransitions.csv",'w')
+        wf.write("\"First Word\",\"Second Word\",\"Transition Probability\",\n")
+        for k in self._nGramDictionary:
+            e = self._nGramDictionary[k]
+            c = Counter(e)
+            c_sum = float(np.sum(c.values()))
+            for v in c.keys():
+                wf.write("\""+k+"\",\""+v+"\",\"{:.3%}\",\n".format(float(c[v]) / c_sum))
+        wf.close()
+        print "n-gram transitions exported"   
+        
+    
+    
+    
