@@ -48,7 +48,7 @@ class Viterbi:
         f.close()
         
     def saveTable2(self, MU):
-        f = open("table2.csv",'w')
+        f = open("Viterbi.csv",'w')
         f.write("\"Tag:\",")
         for col_no in range(len(MU)):
             f.write("\"{:0f}\",".format(col_no))
